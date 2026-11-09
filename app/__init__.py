@@ -1,0 +1,1 @@
+"""InvoicePilot application package."""

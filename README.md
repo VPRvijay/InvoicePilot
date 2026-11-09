@@ -13,7 +13,7 @@ The project is being built for the PayPal AI Hackathon. PayPal production mode i
 
    ```powershell
    py -3.12 -m venv .venv
-   .\.venv\Scripts\python -m pip install -r requirements.txt
+   .\.venv\Scripts\python -m pip install -r requirements.lock.txt
    Copy-Item .env.example .env
    ```
 
