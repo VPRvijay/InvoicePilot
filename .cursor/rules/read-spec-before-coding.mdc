@@ -1,0 +1,5 @@
+---
+globs: app/**, ui/**
+alwaysApply: true
+---
+Before editing behavior, read specs/invoicepilot.md and the relevant section in docs/architecture.md. Write a failing test before implementation.

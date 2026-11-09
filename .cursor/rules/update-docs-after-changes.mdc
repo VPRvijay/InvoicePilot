@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+After each implementation increment, update TODO.md and relevant specs. Keep .env and API keys out of all committed changes. Preserve the explicit action-confirmation gate.
