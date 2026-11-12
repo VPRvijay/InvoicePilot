@@ -33,3 +33,20 @@ Use v2 Invoicing endpoints in sandbox mode. The confirmed invoice action creates
 
 ## Acceptance
 A fresh environment can run the API and UI; schema tests pass; no provider write occurs before confirmation; cancel drops a pending action without a provider call; confirmation sends exactly once; status mapping, dashboard totals, and read-only chat behavior are tested. Sandbox credentials are needed only for the real-provider smoke test.
+
+
+## Offline demo behavior (default)
+- `DEMO_MODE=true` uses the deterministic local parser and seeded fictional invoices.
+- A deterministic local parser replaces Claude. It can only create a `PENDING` local invoice action after required fields are present.
+- SQLite is seeded with fictional invoices spanning `SENT`, `PAID`, `OVERDUE`, and `DRAFT`; refresh and insights operate on local state.
+- Explicit confirmation creates a local invoice marked `SENT`. It does not call PayPal or create a real invoice. Cancel leaves invoice data unchanged.
+
+## PayPal Sandbox mode
+- `DEMO_MODE=false` requires PayPal credentials and `PAYPAL_ENVIRONMENT=sandbox`; other environments fail startup.
+- Invoice send, reminder, and cancellation operations are called only by the explicit confirm endpoint, and only for a still-pending action.
+
+## Claude drafting mode
+- `AGENT_MODE=claude` requires `ANTHROPIC_API_KEY`; `ANTHROPIC_MODEL` selects the model and defaults to `claude-sonnet-4-6`.
+- The LangGraph workflow uses structured output to return a validated `InvoiceDraft` or a follow-up reply. It has no provider tools and cannot perform external actions.
+- The API stores a returned draft as a `PENDING` action. The existing explicit confirmation route remains the only route to a PayPal write operation.
+- `AGENT_MODE=demo` is the default and makes no Anthropic calls. Automated tests mock the model boundary.

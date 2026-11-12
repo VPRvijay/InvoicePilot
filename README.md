@@ -1,60 +1,46 @@
 # InvoicePilot
 
-InvoicePilot helps freelancers turn a short chat request into a PayPal invoice draft, review it, and send it only after explicit confirmation. It tracks sandbox invoice status in a simple dashboard.
+InvoicePilot helps freelancers turn chat requests into reviewable invoice drafts, track invoices, and send through PayPal Sandbox after explicit human confirmation. The app includes an offline demo agent and an optional Claude-backed LangGraph agent.
 
-## Status
+## Quick start
 
-The project is being built for the PayPal AI Hackathon. PayPal production mode is intentionally unsupported. See `specs/invoicepilot.md` for the behavior contract and `AGENTS.md` for project commands and agent rules.
+Requirements: Python 3.12.
 
-## Run locally
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements.lock.txt
+Copy-Item .env.example .env
+.\.venv\Scripts\python -m uvicorn app.main:app --reload
+```
 
-1. Install Python 3.12.
-2. Create an environment and install packages:
+In a second PowerShell window:
 
-   ```powershell
-   py -3.12 -m venv .venv
-   .\.venv\Scripts\python -m pip install -r requirements.lock.txt
-   Copy-Item .env.example .env
-   ```
+```powershell
+.\.venv\Scripts\python -m streamlit run ui/streamlit_app.py
+```
 
-3. Keep `DEMO_MODE=true` for the local fake-provider flow, or set it to `false` and provide `ANTHROPIC_API_KEY`, `PAYPAL_CLIENT_ID`, and `PAYPAL_CLIENT_SECRET` from your PayPal Developer Sandbox app.
-4. Start the API and UI in separate PowerShell windows:
+Open `http://localhost:8501`. The API health endpoint is `http://127.0.0.1:8000/health`.
 
-   ```powershell
-   .\.venv\Scripts\python -m uvicorn app.main:app --reload
-   .\.venv\Scripts\python -m streamlit run ui/streamlit_app.py
-   ```
+## Agent modes
 
-5. Open Streamlit at `http://localhost:8501`. The API health check is `http://127.0.0.1:8000/health`.
+- **Offline demo (default):** keep `DEMO_MODE=true` and `AGENT_MODE=demo`. This uses a deterministic parser and fictional local invoices. No AI or PayPal network calls are made.
+- **Claude drafting:** set `AGENT_MODE=claude`, `ANTHROPIC_API_KEY`, and optionally `ANTHROPIC_MODEL`. The LangGraph workflow sends the chat request to Claude and asks for a structured invoice draft or a follow-up question. Claude has no PayPal tools and cannot execute provider operations.
+- **PayPal Sandbox:** set `DEMO_MODE=false`, provide `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`, and keep `PAYPAL_ENVIRONMENT=sandbox`. Provider operations are available only after the user confirms a pending action. Production endpoints are rejected.
 
-## Test
+Claude mode sends chat text to Anthropic for processing. Do not enter sensitive or real customer data in a demo or hackathon run.
+
+## Tests
 
 ```powershell
 .\.venv\Scripts\python -m pytest -q
 ```
 
-Automated tests mock PayPal and Claude. A real sandbox smoke test requires sandbox credentials and is run manually. Never use production credentials.
+Tests use local SQLite and mocked model/provider calls; they do not contact Anthropic or PayPal.
 
-## Architecture
+## Architecture and safety
 
-Streamlit calls the FastAPI backend. FastAPI stores invoices, chat history, and pending actions in SQLite. The LangGraph agent can only draft a local pending action and read local invoice data. The confirmation endpoint alone calls PayPal's sandbox Invoicing API.
+Streamlit calls FastAPI, which stores invoices, chat history, and pending actions in SQLite. The agent can only return a validated draft; the API stores it as `PENDING`. Only the explicit confirmation route calls PayPal Sandbox. See [the specification](specs/invoicepilot.md), [PayPal integration notes](docs/paypal-integration.md), and [the demo walkthrough](docs/demo-script.md).
 
-PayPal's Python Agent Toolkit currently pins an older LangChain release. This project uses PayPal's documented v2 REST API through HTTPX to keep the current LangGraph stack compatible and to limit outbound actions to a small server-controlled adapter. Official references are in `docs/paypal-integration.md`.
+## License
 
-## Environment variables
-
-| Name | Purpose |
-|---|---|
-| `DEMO_MODE` | Use local deterministic agent/provider behavior without external keys. |
-| `DATABASE_PATH` | SQLite file path. |
-| `ANTHROPIC_API_KEY` | Claude API key when demo mode is off. |
-| `ANTHROPIC_MODEL` | Claude model identifier. |
-| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | PayPal Sandbox app credentials. |
-| `PAYPAL_ENVIRONMENT` | Must remain `sandbox`. |
-| `POLL_INTERVAL_SECONDS` | Background status-poll cadence. |
-| `CORS_ORIGINS` | Allowed local UI origins. |
-| `API_BASE_URL` | FastAPI base URL used by Streamlit. |
-
-## Tools used
-
-Python, FastAPI, SQLite, Streamlit, LangGraph, Claude via LangChain Anthropic, and PayPal Invoicing v2 Sandbox.
+Released under the MIT License. See [LICENSE](LICENSE).
