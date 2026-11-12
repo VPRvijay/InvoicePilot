@@ -18,8 +18,14 @@ class DemoAgent:
         if not name_match: missing.append("client name")
         if not email: missing.append("client email")
         if not amount: missing.append("amount")
-        desc_match = re.search(r"(?:for|of)\s+(?:\$|USD\s*)?\d+(?:\.\d{1,2})?\s*(?:for\s+)?(.+?)(?:\s+due\s+in\s+\d+\s+days?)?$", message, re.I)
-        description = desc_match.group(1).strip(" .") if desc_match else "Professional services"
+        description = "Professional services"
+        if amount:
+            description_text = message[amount.end():]
+            description_text = re.sub(r"^\s*(?:for|of)\s+", "", description_text, flags=re.I)
+            description_text = re.sub(r"\s+due\s+in\s+\d+\s+days?\s*$", "", description_text, flags=re.I)
+            description_text = description_text.strip(" ,.")
+            if description_text:
+                description = description_text
         if not description or description.lower() in {"days", "day"}: description = "Professional services"
         if missing:
             return f"I need the {' and '.join(missing)} before I can prepare a draft.", None
